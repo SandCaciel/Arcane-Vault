@@ -1,0 +1,64 @@
+<!-- Shared Modal: Create or Import Commander Deck from Moxfield -->
+<div id="createDeckModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-surface-container-low border border-gold/40 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between border-b border-leather pb-3">
+      <div>
+        <span class="text-[10px] uppercase tracking-widest text-gold font-bold">Moxfield &amp; Commander Builder</span>
+        <h3 class="font-serif-title text-xl font-bold text-parchment">Create or Import Commander Deck</h3>
+      </div>
+      <button onclick="document.getElementById('createDeckModal').classList.add('hidden')" class="text-on-surface-variant hover:text-parchment">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <form method="post" action="{% url 'decks_index' %}" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="form_action" value="create_or_import_deck"/>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-gold mb-1">Deck Name *</label>
+          <input type="text" name="name" required placeholder="e.g. Dogmeat, Ever Loyal" class="w-full bg-surface-dim border border-leather rounded-lg px-3 py-2 text-sm text-parchment focus:outline-none focus:border-gold"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-gold mb-1">Commander Card Name (Optional)</label>
+          <input type="text" name="commander_name" placeholder="e.g. Dogmeat, Ever Loyal" class="w-full bg-surface-dim border border-leather rounded-lg px-3 py-2 text-sm text-parchment focus:outline-none focus:border-gold"/>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-gold mb-1">Moxfield Deck URL (Optional)</label>
+        <input type="url" name="moxfield_url" placeholder="https://www.moxfield.com/decks/..." class="w-full bg-surface-dim border border-leather rounded-lg px-3 py-2 text-xs text-parchment focus:outline-none focus:border-gold"/>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-gold mb-1">Paste Moxfield / MTGO Decklist (Optional)</label>
+        <textarea name="moxfield_text" rows="8" placeholder="COMMANDER:&#10;1 Dogmeat, Ever Loyal (PIP) 2 *F*&#10;&#10;DECK:&#10;1 Sol Ring (PIP) 239&#10;1 Arcane Signet (PIP) 224" class="w-full bg-surface-dim border border-leather rounded-xl p-3 font-mono text-xs text-parchment focus:outline-none focus:border-gold"></textarea>
+      </div>
+
+      <!-- Physical Precon / Collection Onboarding Option -->
+      <div class="bg-surface-dim border border-gold/40 rounded-xl p-3.5 space-y-2">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" name="add_to_physical_collection" class="mt-1 accent-crimson w-4 h-4"/>
+          <span class="text-xs leading-relaxed">
+            <strong class="text-gold block">Add all cards in this deck directly to my physical Vault collection</strong>
+            <span class="text-on-surface-variant">
+              Check this when importing a physical prebuilt Commander deck you just bought so all 100 cards are added to your owned Vault inventory and allocated to this deck. Leave unchecked to allocate from your existing Vault and automatically add any unowned or already-in-use cards to your Wishlist.
+            </span>
+          </span>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        <label class="flex items-center gap-2 text-xs text-parchment cursor-pointer">
+          <input type="checkbox" name="is_public" checked class="accent-crimson"/>
+          <span>Make deck publicly viewable on my profile</span>
+        </label>
+        <div class="flex gap-2">
+          <button type="button" onclick="document.getElementById('createDeckModal').classList.add('hidden')" class="px-4 py-2 rounded-lg bg-surface-container text-xs text-on-surface-variant">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 rounded-lg bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase tracking-wider">Create / Import Deck</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

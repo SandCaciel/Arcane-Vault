@@ -1,0 +1,45 @@
+{% extends "vault/base.html" %}
+{% block title %}Request Account Access — Arcane Vault{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto px-4 py-16">
+  <div class="bg-surface-container-low border border-leather rounded-2xl p-8 shadow-2xl space-y-6">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-crimson border border-gold/40 flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-parchment text-2xl">hourglass_top</span>
+      </div>
+      <div>
+        <h1 class="font-serif-title text-2xl font-bold text-parchment">Account Creation Request</h1>
+        <p class="text-xs text-on-surface-variant">Signed in as <strong class="text-gold">{{ user.email }}</strong></p>
+      </div>
+    </div>
+
+    <div class="bg-surface-dim border border-leather rounded-xl p-4 space-y-2 text-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-xs uppercase tracking-wider text-on-surface-variant font-bold">Current Status</span>
+        {% if account_request.status == 'PENDING' %}
+          <span class="px-2.5 py-0.5 rounded-full bg-copper/30 border border-gold text-gold text-xs font-bold uppercase">Pending Admin Approval</span>
+        {% elif account_request.status == 'REJECTED' %}
+          <span class="px-2.5 py-0.5 rounded-full bg-red-950 border border-red-500 text-red-200 text-xs font-bold uppercase">Rejected</span>
+        {% endif %}
+      </div>
+      <p class="text-xs text-on-surface-variant leading-relaxed">
+        Arcane Vault is a private multi-user MTG collection &amp; Commander deckbuilding archive. Submit a brief note below so an administrator can approve your account on the Admin Dashboard.
+      </p>
+      {% if account_request.admin_reason %}
+        <p class="text-xs text-gold mt-2"><strong>Admin Note:</strong> {{ account_request.admin_reason }}</p>
+      {% endif %}
+    </div>
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-gold mb-1.5">Your Note / Discord Handle (Optional)</label>
+        <textarea name="note" rows="3" class="w-full bg-surface-dim border border-leather rounded-lg px-3.5 py-2.5 text-sm text-parchment focus:outline-none focus:border-gold" placeholder="e.g. Hey! It's Lance from our Commander pod — requesting Vault access.">{{ account_request.note }}</textarea>
+      </div>
+      <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase tracking-wider transition">
+        Submit / Update Access Request
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>{% block title %}Arcane Vault — Commander's Ledger{% endblock %}</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "crimson": "#6f1d1b",
+            "gold": "#bb9457",
+            "leather": "#432818",
+            "copper": "#99582a",
+            "parchment": "#ffe6a7",
+            "surface-container-lowest": "#1d0901",
+            "surface-container-low": "#2d1607",
+            "surface-container": "#32190a",
+            "surface-container-high": "#3e2414",
+            "surface-container-highest": "#4a2e1e",
+            "surface-dim": "#230e02",
+            "surface": "#230e02",
+            "surface-bright": "#4f3222",
+            "on-surface": "#ffe6a7",
+            "on-surface-variant": "#dcc0bd",
+            "primary": "#ffb3ad",
+            "primary-container": "#6f1d1b",
+            "on-primary-container": "#ffe6a7",
+            "secondary": "#bb9457",
+            "secondary-container": "#432818",
+            "tertiary": "#99582a",
+            "outline": "#a48b89",
+            "outline-variant": "#564240"
+          },
+          fontFamily: {
+            "headline": ["Playfair Display", "serif"],
+            "body": ["Inter", "sans-serif"],
+            "mono": ["Inter", "monospace"]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #230e02;
+      color: #ffe6a7;
+      font-family: 'Inter', sans-serif;
+    }
+    .font-serif-title {
+      font-family: 'Playfair Display', serif;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-parchment">
+
+  <!-- Top Stitch Grimoire Header -->
+  <header class="fixed top-0 w-full z-50 bg-surface-container-lowest/95 backdrop-blur-xl border-b border-leather/80 shadow-[0_4px_24px_rgba(0,0,0,0.75)]">
+    <div class="h-20 max-w-[1720px] mx-auto px-4 lg:px-6 flex items-center justify-between gap-4">
+      <!-- Brand + Quick Scryfall Search -->
+      <div class="flex items-center gap-6 shrink-0">
+        <a href="{% url 'home' %}" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-crimson via-copper to-leather border border-gold/50 flex items-center justify-center shadow-[0_0_15px_rgba(111,29,27,0.6)]">
+            <span class="material-symbols-outlined text-parchment text-2xl">auto_awesome</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-serif-title text-xl font-bold tracking-wider text-gold uppercase leading-none">Arcane Vault</span>
+            <span class="text-[11px] font-bold tracking-widest text-on-surface-variant uppercase mt-1 opacity-80">Commander's Ledger</span>
+          </div>
+        </a>
+
+        <form action="{% url 'card_explorer' %}" method="get" class="hidden xl:flex items-center bg-surface-dim border border-leather px-3 py-1.5 rounded-lg gap-2 shadow-inner">
+          <span class="material-symbols-outlined text-gold text-sm">search</span>
+          <input name="q" value="{{ query|default:'' }}" class="bg-transparent text-parchment placeholder:text-outline text-sm focus:outline-none w-64" placeholder="Scryfall syntax (e.g. c:wubrg cmc<=3)..." type="text"/>
+          <button type="submit" class="text-[11px] px-2 py-0.5 rounded bg-leather text-gold font-bold uppercase hover:bg-copper hover:text-parchment transition">Search</button>
+        </form>
+      </div>
+
+      <!-- Primary Navigation -->
+      <nav class="hidden lg:flex items-center gap-1.5">
+        <a href="{% url 'card_explorer' %}" class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all {% if active_nav == 'explorer' %}bg-crimson text-parchment shadow-[0_0_12px_rgba(111,29,27,0.6)] border border-gold/30{% else %}text-on-surface-variant hover:bg-surface-container hover:text-parchment{% endif %}">
+          Card Explorer
+        </a>
+        {% if user.is_authenticated and user.is_approved %}
+          <a href="{% url 'my_vault' %}" class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all {% if active_nav == 'vault' %}bg-crimson text-parchment shadow-[0_0_12px_rgba(111,29,27,0.6)] border border-gold/30{% else %}text-on-surface-variant hover:bg-surface-container hover:text-parchment{% endif %}">
+            My Vault &amp; Wishlist
+          </a>
+          <a href="{% url 'decks_index' %}" class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all {% if active_nav == 'workshop' %}bg-crimson text-parchment shadow-[0_0_12px_rgba(111,29,27,0.6)] border border-gold/30{% else %}text-on-surface-variant hover:bg-surface-container hover:text-parchment{% endif %}">
+            Deck Workshop
+          </a>
+          <a href="{% url 'deck_analysis_default' %}" class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all {% if active_nav == 'analysis' %}bg-crimson text-parchment shadow-[0_0_12px_rgba(111,29,27,0.6)] border border-gold/30{% else %}text-on-surface-variant hover:bg-surface-container hover:text-parchment{% endif %}">
+            Analysis &amp; Playtest
+          </a>
+          {% if user.is_staff or user.is_superuser %}
+            <a href="{% url 'admin_requests_dashboard' %}" class="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 {% if request.path == '/admin-portal/requests/' %}bg-crimson text-parchment border border-gold/30{% else %}text-gold hover:bg-surface-container{% endif %}">
+              <span class="material-symbols-outlined text-sm">shield_person</span>
+              <span>Admin</span>
+              {% if header_pending_requests > 0 %}
+                <span class="px-1.5 py-0.5 text-[10px] rounded-full bg-crimson text-parchment border border-gold">{{ header_pending_requests }}</span>
+              {% endif %}
+            </a>
+          {% endif %}
+        {% endif %}
+      </nav>
+
+      <!-- Right Status Ledger & User Profile -->
+      <div class="flex items-center gap-3 shrink-0">
+        {% if user.is_authenticated and user.is_approved %}
+          <div class="hidden md:flex items-center gap-3 bg-surface-container-low border border-leather px-3.5 py-1.5 rounded-xl">
+            <a href="{% url 'my_vault' %}" class="flex flex-col text-right hover:opacity-90">
+              <span class="text-xs text-gold font-bold tracking-tight">{{ header_total_cards }} Cards</span>
+              <span class="text-[11px] text-on-surface-variant">${{ header_est_value|floatformat:2 }} Value</span>
+            </a>
+            <div class="h-6 w-px bg-leather"></div>
+            <a href="{% url 'decks_index' %}?list=1" class="flex items-center gap-1 bg-crimson px-2.5 py-1 rounded border border-gold/30 hover:bg-copper transition">
+              <span class="material-symbols-outlined text-xs text-parchment">style</span>
+              <span class="text-xs text-parchment font-bold">{{ header_deck_count }} Decks</span>
+            </a>
+          </div>
+
+          <a href="{% url 'profile_settings' %}" class="flex items-center gap-2 bg-surface-container hover:bg-surface-container-high border border-leather px-3 py-1.5 rounded-lg text-xs font-semibold text-parchment transition" title="Profile, Public Share & AI API Keys">
+            <span class="material-symbols-outlined text-base text-gold">key</span>
+            <span class="hidden sm:inline">{{ user.get_display_name }}</span>
+          </a>
+          <a href="{% url 'logout' %}" class="p-2 rounded-lg bg-surface-container hover:bg-crimson text-on-surface-variant hover:text-parchment transition" title="Sign Out">
+            <span class="material-symbols-outlined text-base">logout</span>
+          </a>
+        {% elif user.is_authenticated %}
+          <a href="{% url 'request_access' %}" class="px-3 py-1.5 rounded-lg bg-copper text-parchment text-xs font-bold uppercase">Approval Pending</a>
+          <a href="{% url 'logout' %}" class="px-3 py-1.5 rounded-lg bg-surface-container text-xs text-on-surface-variant hover:text-parchment">Sign Out</a>
+        {% else %}
+          <a href="{% url 'login' %}" class="px-4 py-2 rounded-lg bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_14px_rgba(111,29,27,0.5)] transition">
+            <span class="material-symbols-outlined text-sm">login</span>
+            Sign In
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="w-full pt-20 flex-1 relative">
+    <!-- Top Ambient Grimoire Glow Layer -->
+    <div class="absolute top-0 inset-x-0 h-80 overflow-hidden pointer-events-none -z-10">
+      <div class="absolute -top-32 left-1/4 w-96 h-96 bg-crimson/20 rounded-full blur-[120px]"></div>
+      <div class="absolute -top-24 right-1/4 w-96 h-96 bg-gold/10 rounded-full blur-[130px]"></div>
+    </div>
+
+    {% if messages %}
+      <div class="max-w-[1720px] mx-auto px-4 lg:px-6 pt-4 space-y-2">
+        {% for message in messages %}
+          <div class="px-4 py-3 rounded-lg border flex items-center justify-between text-sm {% if message.tags == 'error' %}bg-red-950/90 border-red-700 text-red-200{% elif message.tags == 'warning' %}bg-amber-950/90 border-gold text-parchment{% else %}bg-surface-container-high border-gold/50 text-parchment{% endif %} shadow-lg">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-gold text-base">info</span>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-leather/60 bg-surface-container-lowest py-6 px-4 lg:px-6 mt-12">
+    <div class="max-w-[1720px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-on-surface-variant">
+      <div class="flex items-center gap-2">
+        <span class="font-serif-title text-gold font-semibold">Arcane Vault</span>
+        <span>•</span>
+        <span>Commander Collection &amp; Deckbuilding Archive</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="/api/v1/docs" class="text-gold hover:underline flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">api</span> OpenAPI / AI Docs
+        </a>
+        <span>Card data &amp; imagery powered by Scryfall</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,145 @@
+{% extends "vault/base.html" %}
+{% block title %}Deck Analysis &amp; Playtest — {{ deck.name }}{% endblock %}
+{% block content %}
+<div class="max-w-[1720px] mx-auto px-4 lg:px-6 py-8 space-y-8">
+
+  <!-- Header & Deck Switcher -->
+  <div class="flex flex-wrap items-center justify-between gap-4 border-b border-leather pb-5">
+    <div>
+      <span class="text-xs uppercase tracking-widest text-gold font-bold">Tactical Telemetry &amp; Goldfish Simulator</span>
+      <h1 class="font-serif-title text-3xl font-bold text-parchment mt-1">{{ deck.name }} — Analysis &amp; Playtest</h1>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <select onchange="if(this.value) window.location.href=this.value;" class="bg-surface-dim border border-leather rounded-xl px-4 py-2 text-xs font-bold text-gold">
+        {% for d in user_decks %}
+          <option value="{% url 'deck_analysis' slug=d.slug %}" {% if d.id == deck.id %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+      <a href="{% url 'deck_workshop' slug=deck.slug %}" class="px-4 py-2 rounded-xl bg-surface-container hover:bg-leather border border-leather text-parchment text-xs font-bold uppercase flex items-center gap-1.5 transition">
+        <span class="material-symbols-outlined text-sm">edit_note</span> Back to Workshop
+      </a>
+    </div>
+  </div>
+
+  <!-- Analytics Grid: Mana Curve, Color Identity & Type Breakdown -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Mana Value Curve -->
+    <div class="bg-surface-container-low border border-leather rounded-2xl p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="font-serif-title text-lg font-bold text-parchment">Mana Value Curve (Non-Lands)</h2>
+        <span class="material-symbols-outlined text-gold">bar_chart</span>
+      </div>
+      <div class="h-48 flex items-end justify-between gap-2 pt-6 px-2 bg-surface-dim border border-leather rounded-xl p-4">
+        {% for bar in curve_bars %}
+          <div class="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+            <span class="font-mono text-[11px] text-gold font-bold">{{ bar.count }}</span>
+            <div class="w-full bg-gradient-to-t from-crimson via-copper to-gold rounded-t transition-all" style="height: {{ bar.height_pct }}%; min-height: 4px;"></div>
+            <span class="font-mono text-xs text-on-surface-variant">{{ bar.label }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Color Identity Pip Breakdown -->
+    <div class="bg-surface-container-low border border-leather rounded-2xl p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="font-serif-title text-lg font-bold text-parchment">Color Identity Distribution</h2>
+        <span class="material-symbols-outlined text-gold">palette</span>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div class="bg-surface-dim border border-leather rounded-xl p-3 text-center">
+          <span class="text-xs font-bold text-amber-100">White (W)</span>
+          <div class="font-serif-title text-2xl font-bold text-parchment mt-1">{{ color_counts.W }}</div>
+        </div>
+        <div class="bg-surface-dim border border-leather rounded-xl p-3 text-center">
+          <span class="text-xs font-bold text-sky-300">Blue (U)</span>
+          <div class="font-serif-title text-2xl font-bold text-parchment mt-1">{{ color_counts.U }}</div>
+        </div>
+        <div class="bg-surface-dim border border-leather rounded-xl p-3 text-center">
+          <span class="text-xs font-bold text-purple-300">Black (B)</span>
+          <div class="font-serif-title text-2xl font-bold text-parchment mt-1">{{ color_counts.B }}</div>
+        </div>
+        <div class="bg-surface-dim border border-leather rounded-xl p-3 text-center">
+          <span class="text-xs font-bold text-red-400">Red (R)</span>
+          <div class="font-serif-title text-2xl font-bold text-parchment mt-1">{{ color_counts.R }}</div>
+        </div>
+        <div class="bg-surface-dim border border-leather rounded-xl p-3 text-center">
+          <span class="text-xs font-bold text-emerald-400">Green (G)</span>
+          <div class="font-serif-title text-2xl font-bold text-parchment mt-1">{{ color_counts.G }}</div>
+        </div>
+        <div class="bg-surface-dim border border-leather rounded-xl p-3 text-center">
+          <span class="text-xs font-bold text-stone-300">Colorless (C)</span>
+          <div class="font-serif-title text-2xl font-bold text-parchment mt-1">{{ color_counts.C }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card Type Breakdown -->
+    <div class="bg-surface-container-low border border-leather rounded-2xl p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="font-serif-title text-lg font-bold text-parchment">Card Type Composition</h2>
+        <span class="material-symbols-outlined text-gold">category</span>
+      </div>
+      <div class="space-y-2">
+        {% for tname, tcount in type_counts.items %}
+          <div class="flex items-center justify-between bg-surface-dim border border-leather px-3.5 py-2 rounded-lg text-xs">
+            <span class="font-semibold text-parchment">{{ tname }}</span>
+            <span class="font-mono font-bold text-gold">{{ tcount }}</span>
+          </div>
+        {% empty %}
+          <p class="text-xs text-on-surface-variant">Add cards to view type composition.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Goldfish Opening Hand & Draw Simulator -->
+  <div class="bg-surface-container-low border border-leather rounded-2xl p-6 lg:p-8 shadow-2xl space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-leather pb-4">
+      <div>
+        <span class="text-xs uppercase tracking-widest text-gold font-bold">Interactive Goldfish Table</span>
+        <h2 class="font-serif-title text-2xl font-bold text-parchment mt-0.5">Simulated Opening Hand (7 Cards)</h2>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="{% url 'deck_analysis' slug=deck.slug %}" class="px-4 py-2.5 rounded-xl bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow transition">
+          <span class="material-symbols-outlined text-sm">refresh</span> Shuffle &amp; New Opening 7
+        </a>
+      </div>
+    </div>
+
+    {% if opening_hand %}
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+        {% for card in opening_hand %}
+          <div class="bg-surface-dim border border-gold/40 rounded-xl overflow-hidden shadow-lg">
+            <img src="{{ card.image_normal }}" alt="{{ card.name }}" class="w-full aspect-[5/7] object-cover"/>
+            <div class="p-2 text-center">
+              <div class="font-serif-title text-xs font-bold text-parchment truncate">{{ card.name }}</div>
+              <div class="text-[10px] font-mono text-gold">{{ card.cmc|floatformat:0 }} CMC</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if next_draws %}
+        <div class="pt-4 border-t border-leather space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-gold">Upcoming Top-of-Library Draws (Turns 1–8)</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            {% for card in next_draws %}
+              <div class="bg-surface-container border border-leather rounded-lg p-2 flex flex-col items-center text-center gap-1">
+                <span class="text-[10px] font-mono text-gold uppercase">Draw #{{ forloop.counter }}</span>
+                <img src="{{ card.image_normal }}" alt="{{ card.name }}" class="w-full aspect-[5/7] rounded object-cover"/>
+                <span class="text-[11px] font-semibold text-parchment truncate w-full">{{ card.name }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    {% else %}
+      <p class="text-sm text-on-surface-variant text-center py-8">Add cards to your Commander deck to test opening hands.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

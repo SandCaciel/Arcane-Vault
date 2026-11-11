@@ -218,3 +218,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Arcane Vault specific ignores
+.env.*
+!.env.example
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.db
+data/
+staticfiles/
+media/
+secrets/
+*.pem
+*.key
+design_reference/

@@ -1,0 +1,39 @@
+{% extends "vault/base.html" %}
+{% block title %}Sign In — Arcane Vault{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-16">
+  <div class="bg-surface-container-low border border-leather rounded-2xl p-8 shadow-2xl space-y-6">
+    <div class="text-center space-y-2">
+      <div class="w-14 h-14 mx-auto rounded-xl bg-crimson border border-gold/50 flex items-center justify-center shadow-[0_0_20px_rgba(111,29,27,0.6)]">
+        <span class="material-symbols-outlined text-parchment text-3xl">vpn_key</span>
+      </div>
+      <h1 class="font-serif-title text-2xl font-bold text-parchment">Enter the Arcane Vault</h1>
+      <p class="text-xs text-on-surface-variant">
+        Authenticate with Google Single Sign-On. First-time visitors can submit an Account Creation Request for Administrator approval.
+      </p>
+    </div>
+
+    <a href="{% url 'google_login' %}" class="w-full py-3 px-4 rounded-xl bg-crimson hover:bg-copper text-parchment border border-gold/40 font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-lg transition">
+      <span class="material-symbols-outlined text-lg">account_circle</span>
+      <span>Sign in with Google (OIDC)</span>
+    </a>
+
+    {% if debug_mode %}
+      <div class="pt-4 border-t border-leather space-y-3">
+        <p class="text-[11px] uppercase tracking-wider text-gold font-bold text-center">Local Development Sign-In (DEBUG Mode)</p>
+        <form method="post" action="{% url 'dev_quick_login' %}" class="space-y-3">
+          {% csrf_token %}
+          <input type="email" name="email" value="archmage@localhost" class="w-full bg-surface-dim border border-leather rounded-lg px-3 py-2 text-sm text-parchment" placeholder="Email address" required/>
+          <select name="role" class="w-full bg-surface-dim border border-leather rounded-lg px-3 py-2 text-sm text-parchment">
+            <option value="admin">Approved Admin / Superuser</option>
+            <option value="pending">Unapproved User (Test Request Queue)</option>
+          </select>
+          <button type="submit" class="w-full py-2 rounded-lg bg-leather hover:bg-copper text-gold hover:text-parchment text-xs font-bold uppercase tracking-wider transition">
+            Dev Quick Login
+          </button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

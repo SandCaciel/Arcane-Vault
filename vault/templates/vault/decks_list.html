@@ -1,0 +1,71 @@
+{% extends "vault/base.html" %}
+{% block title %}Commander Decks — Arcane Vault{% endblock %}
+{% block content %}
+<div class="max-w-[1720px] mx-auto px-4 lg:px-6 py-8 space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-4 border-b border-leather pb-5">
+    <div>
+      <span class="text-xs uppercase tracking-widest text-gold font-bold">Commander EDH Grimoires</span>
+      <h1 class="font-serif-title text-3xl font-bold text-parchment mt-1">Your Commander Decks</h1>
+    </div>
+    <button onclick="document.getElementById('createDeckModal').classList.remove('hidden')" class="px-5 py-2.5 rounded-xl bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg transition">
+      <span class="material-symbols-outlined text-base">add_circle</span>
+      New Deck / Import from Moxfield
+    </button>
+  </div>
+
+  {% if deck_summaries %}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {% for item in deck_summaries %}
+        <a href="{% url 'deck_workshop' slug=item.deck.slug %}" class="bg-surface-container-low border border-leather hover:border-gold/60 rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between transition group">
+          <div class="relative h-44 bg-surface-dim overflow-hidden">
+            {% if item.commander %}
+              <img src="{{ item.commander.image_art_crop }}" alt="{{ item.commander.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-85"/>
+            {% endif %}
+            <div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/40 to-transparent"></div>
+            <div class="absolute bottom-3 left-4 right-4 flex items-end justify-between">
+              <div>
+                <span class="text-[10px] uppercase tracking-widest text-gold font-bold">{{ item.deck.tier_badge }}</span>
+                <h2 class="font-serif-title text-xl font-bold text-parchment leading-tight">{{ item.deck.name }}</h2>
+                {% if item.commander %}
+                  <p class="text-xs text-on-surface-variant">{{ item.commander.name }}</p>
+                {% endif %}
+              </div>
+              <span class="px-2.5 py-1 rounded bg-surface-container-lowest/90 border border-gold/40 font-mono text-xs font-bold text-gold">
+                ${{ item.total_val|floatformat:2 }}
+              </span>
+            </div>
+          </div>
+
+          <div class="p-4 grid grid-cols-3 gap-2 text-center bg-surface-container-lowest/60 border-t border-leather">
+            <div>
+              <span class="block text-[10px] uppercase text-on-surface-variant">Cards</span>
+              <span class="font-mono text-sm font-bold text-parchment">{{ item.total_cards }}/100</span>
+            </div>
+            <div>
+              <span class="block text-[10px] uppercase text-on-surface-variant">In Vault</span>
+              <span class="font-mono text-sm font-bold text-gold">{{ item.owned_alloc }} Allocated</span>
+            </div>
+            <div>
+              <span class="block text-[10px] uppercase text-on-surface-variant">Wishlist</span>
+              <span class="font-mono text-sm font-bold text-primary">{{ item.wishlist_left }} Needed</span>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="bg-surface-container-low border border-leather rounded-2xl p-12 text-center space-y-4">
+      <span class="material-symbols-outlined text-5xl text-gold">style</span>
+      <h2 class="font-serif-title text-2xl font-bold text-parchment">No Commander Decks Created Yet</h2>
+      <p class="text-xs text-on-surface-variant max-w-lg mx-auto">
+        Build a new 100-card Commander deck from scratch or import a Moxfield decklist. You can either allocate cards from your existing physical Vault or check the box to add a newly purchased physical prebuilt deck directly into your Vault!
+      </p>
+      <button onclick="document.getElementById('createDeckModal').classList.remove('hidden')" class="px-6 py-3 rounded-xl bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase tracking-wider">
+        + Create or Import Commander Deck
+      </button>
+    </div>
+  {% endif %}
+</div>
+
+{% include "vault/partials/create_deck_modal.html" %}
+{% endblock %}

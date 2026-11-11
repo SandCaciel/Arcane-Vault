@@ -1,0 +1,135 @@
+{% extends "vault/base.html" %}
+{% block title %}Card Explorer — Arcane Vault{% endblock %}
+{% block content %}
+<div class="max-w-[1720px] mx-auto px-4 lg:px-6 py-8 space-y-6">
+
+  <!-- Explorer Hero Search Banner -->
+  <div class="bg-surface-container-low border border-leather rounded-2xl p-6 lg:p-8 shadow-2xl space-y-5">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div>
+        <span class="text-xs uppercase tracking-widest text-gold font-bold">Scryfall Grimoire Index</span>
+        <h1 class="font-serif-title text-3xl lg:text-4xl font-bold text-parchment mt-1">Card Explorer &amp; Syntax Search</h1>
+      </div>
+      <div class="text-xs text-on-surface-variant">
+        Showing <strong class="text-gold">{{ search_result.total_cards }}</strong> matching cards for <code class="px-2 py-0.5 rounded bg-surface-dim border border-leather text-parchment">{{ search_result.query }}</code>
+      </div>
+    </div>
+
+    <form method="get" action="{% url 'card_explorer' %}" class="flex flex-col sm:flex-row gap-3">
+      <div class="relative flex-1">
+        <span class="material-symbols-outlined absolute left-4 top-3.5 text-gold">search</span>
+        <input type="text" name="q" value="{{ query }}" placeholder="Search with full Scryfall syntax (e.g. t:legendary t:creature id<=wubrg, o:draw cmc<=3, s:pip)..." class="w-full bg-surface-dim border border-leather focus:border-gold rounded-xl pl-12 pr-4 py-3 text-sm text-parchment placeholder:text-outline focus:outline-none"/>
+      </div>
+      <select name="order" class="bg-surface-dim border border-leather rounded-xl px-4 py-3 text-xs font-bold uppercase text-gold">
+        <option value="edhrec" {% if order == 'edhrec' %}selected{% endif %}>Sort: EDHREC Rank</option>
+        <option value="usd" {% if order == 'usd' %}selected{% endif %}>Sort: Price (USD)</option>
+        <option value="cmc" {% if order == 'cmc' %}selected{% endif %}>Sort: Mana Value</option>
+        <option value="name" {% if order == 'name' %}selected{% endif %}>Sort: Name</option>
+        <option value="released" {% if order == 'released' %}selected{% endif %}>Sort: Release Date</option>
+      </select>
+      <button type="submit" class="px-6 py-3 rounded-xl bg-crimson hover:bg-copper text-parchment border border-gold/40 font-bold text-xs uppercase tracking-wider shadow-lg transition">
+        Invoke Search
+      </button>
+    </form>
+
+    <!-- Quick Syntax Presets -->
+    <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
+      <span class="text-on-surface-variant font-semibold uppercase text-[11px]">Syntax Presets:</span>
+      <a href="?q=is:commander+f:commander" class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-leather border border-leather text-gold font-mono text-xs transition">is:commander</a>
+      <a href="?q=t:artifact+o:%22add+%7B%22+cmc%3C=3+f:commander" class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-leather border border-leather text-gold font-mono text-xs transition">Mana Rocks (cmc&lt;=3)</a>
+      <a href="?q=o:%22draw+a+card%22+cmc%3C=3+f:commander" class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-leather border border-leather text-gold font-mono text-xs transition">o:"draw a card" cmc&lt;=3</a>
+      <a href="?q=s:pip" class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-leather border border-leather text-gold font-mono text-xs transition">s:pip (Fallout)</a>
+      <a href="?q=t:land+is:fetchland" class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-leather border border-leather text-gold font-mono text-xs transition">is:fetchland</a>
+    </div>
+  </div>
+
+  {% if search_result.error %}
+    <div class="bg-surface-container-low border border-crimson rounded-xl p-6 text-center text-sm text-parchment">
+      {{ search_result.error }}
+    </div>
+  {% endif %}
+
+  <!-- Card Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-5">
+    {% for item in enriched_cards %}
+      <div class="bg-surface-container-low border border-leather hover:border-gold/60 rounded-xl overflow-hidden shadow-xl flex flex-col justify-between transition group">
+        <div>
+          <div class="relative aspect-[5/7] bg-surface-dim overflow-hidden">
+            <img src="{{ item.card.image_normal }}" alt="{{ item.card.name }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"/>
+            <!-- Ownership & Deck Allocation Overlay Badges -->
+            <div class="absolute top-2 left-2 right-2 flex flex-wrap items-center justify-between gap-1">
+              {% if item.owned_qty > 0 %}
+                <span class="px-2 py-0.5 rounded bg-surface-container-lowest/90 border border-gold text-gold text-[11px] font-bold flex items-center gap-1 shadow">
+                  <span class="material-symbols-outlined text-xs">check_circle</span> {{ item.owned_qty }} Owned
+                </span>
+              {% endif %}
+              {% if item.decks_using %}
+                <span class="px-2 py-0.5 rounded bg-crimson/95 border border-gold/40 text-parchment text-[10px] font-bold uppercase shadow" title="Allocated in: {% for d in item.decks_using %}{{ d.deck_name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                  In {{ item.decks_using|length }} Deck{{ item.decks_using|length|pluralize }}
+                </span>
+              {% endif %}
+            </div>
+            <div class="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-surface-container-lowest/95 border border-leather text-parchment font-mono text-xs font-bold">
+              ${{ item.price_usd|floatformat:2 }}
+            </div>
+          </div>
+
+          <div class="p-3.5 space-y-1">
+            <h3 class="font-serif-title text-sm font-bold text-parchment truncate" title="{{ item.card.name }}">{{ item.card.name }}</h3>
+            <p class="text-[11px] text-on-surface-variant truncate">{{ item.card.type_line }}</p>
+            <p class="text-[10px] text-gold font-mono uppercase">{{ item.card.set_code|upper }} #{{ item.card.collector_number }} • {{ item.card.rarity|title }}</p>
+            {% if item.decks_using %}
+              <p class="text-[10px] text-parchment/80 truncate pt-0.5">
+                <span class="text-gold font-semibold">Used in:</span>
+                {% for d in item.decks_using %}{{ d.deck_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+              </p>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if user.is_authenticated and user.is_approved %}
+          <div class="p-3 pt-0 space-y-2 border-t border-leather/40 mt-2">
+            <div class="grid grid-cols-2 gap-1.5 pt-2">
+              <form method="post" action="{% url 'quick_card_action' %}">
+                {% csrf_token %}
+                <input type="hidden" name="scryfall_id" value="{{ item.card.scryfall_id }}"/>
+                <input type="hidden" name="action_type" value="add_vault"/>
+                <input type="hidden" name="next" value="{{ request.get_full_path }}"/>
+                <button type="submit" class="w-full py-1.5 px-2 rounded bg-leather hover:bg-copper text-gold hover:text-parchment text-[11px] font-bold uppercase flex items-center justify-center gap-1 transition">
+                  <span class="material-symbols-outlined text-xs">inventory_2</span> + Vault
+                </button>
+              </form>
+              <form method="post" action="{% url 'quick_card_action' %}">
+                {% csrf_token %}
+                <input type="hidden" name="scryfall_id" value="{{ item.card.scryfall_id }}"/>
+                <input type="hidden" name="action_type" value="add_wishlist"/>
+                <input type="hidden" name="next" value="{{ request.get_full_path }}"/>
+                <button type="submit" class="w-full py-1.5 px-2 rounded bg-surface-container hover:bg-crimson text-on-surface-variant hover:text-parchment text-[11px] font-bold uppercase flex items-center justify-center gap-1 transition">
+                  <span class="material-symbols-outlined text-xs">star</span> Wishlist
+                </button>
+              </form>
+            </div>
+
+            {% if user_decks %}
+              <form method="post" action="{% url 'quick_card_action' %}" class="flex items-center gap-1">
+                {% csrf_token %}
+                <input type="hidden" name="scryfall_id" value="{{ item.card.scryfall_id }}"/>
+                <input type="hidden" name="action_type" value="add_deck"/>
+                <input type="hidden" name="next" value="{{ request.get_full_path }}"/>
+                <select name="deck_id" class="flex-1 bg-surface-dim border border-leather rounded px-2 py-1 text-[11px] text-parchment truncate">
+                  {% for d in user_decks %}
+                    <option value="{{ d.id }}">{{ d.name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="px-2.5 py-1 rounded bg-crimson hover:bg-copper text-parchment text-[11px] font-bold uppercase shrink-0 transition" title="Add to selected Commander deck">
+                  + Deck
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

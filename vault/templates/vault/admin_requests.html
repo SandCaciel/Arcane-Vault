@@ -1,0 +1,109 @@
+{% extends "vault/base.html" %}
+{% block title %}Admin Account Approval Dashboard — Arcane Vault{% endblock %}
+{% block content %}
+<div class="max-w-[1400px] mx-auto px-4 lg:px-6 py-8 space-y-8">
+  <div class="flex flex-wrap items-center justify-between gap-4 border-b border-leather pb-5">
+    <div>
+      <span class="text-xs uppercase tracking-widest text-gold font-bold">Sanctum Administration</span>
+      <h1 class="font-serif-title text-3xl font-bold text-parchment mt-1">Account Creation Requests &amp; User Roster</h1>
+    </div>
+    <form method="post" class="flex items-center gap-2 bg-surface-container-low border border-leather p-2 rounded-xl">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="preapprove_email"/>
+      <input type="email" name="email" required placeholder="Pre-approve Google email..." class="bg-surface-dim border border-leather rounded-lg px-3 py-1.5 text-xs text-parchment focus:outline-none focus:border-gold w-64"/>
+      <button type="submit" class="px-3 py-1.5 rounded-lg bg-crimson hover:bg-copper text-parchment text-xs font-bold uppercase tracking-wider transition">
+        + Pre-Approve User
+      </button>
+    </form>
+  </div>
+
+  <!-- Pending Account Creation Requests -->
+  <div class="bg-surface-container-low border border-leather rounded-xl overflow-hidden shadow-xl">
+    <div class="bg-surface-container px-5 py-3.5 border-b border-leather flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-gold">pending_actions</span>
+        <h2 class="font-serif-title text-lg font-semibold text-parchment">Pending Account Creation Requests</h2>
+      </div>
+      <span class="px-2.5 py-0.5 rounded bg-crimson text-parchment text-xs font-bold">{{ pending_requests|length }} Pending</span>
+    </div>
+
+    {% if pending_requests %}
+      <div class="divide-y divide-leather/60">
+        {% for req in pending_requests %}
+          <div class="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2.5">
+                <span class="font-bold text-parchment text-base">{{ req.user.get_display_name }}</span>
+                <span class="text-xs text-gold font-mono">{{ req.user.email }}</span>
+                <span class="text-[11px] text-on-surface-variant">• Requested {{ req.created_at|date:"M d, Y H:i" }}</span>
+              </div>
+              {% if req.note %}
+                <p class="text-xs text-parchment/90 bg-surface-dim border border-leather px-3 py-2 rounded-lg mt-1">
+                  "{{ req.note }}"
+                </p>
+              {% else %}
+                <p class="text-xs text-on-surface-variant italic">No note attached.</p>
+              {% endif %}
+            </div>
+
+            <form method="post" class="flex flex-wrap items-center gap-2 shrink-0">
+              {% csrf_token %}
+              <input type="hidden" name="request_id" value="{{ req.id }}"/>
+              <input type="text" name="admin_reason" placeholder="Optional note..." class="bg-surface-dim border border-leather rounded-lg px-3 py-1.5 text-xs text-parchment"/>
+              <button type="submit" name="action" value="approve" class="px-4 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-parchment text-xs font-bold uppercase tracking-wider flex items-center gap-1 transition">
+                <span class="material-symbols-outlined text-sm">check_circle</span> Approve
+              </button>
+              <button type="submit" name="action" value="reject" class="px-4 py-2 rounded-lg bg-crimson hover:bg-red-800 text-parchment text-xs font-bold uppercase tracking-wider flex items-center gap-1 transition">
+                <span class="material-symbols-outlined text-sm">cancel</span> Reject
+              </button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="p-8 text-center text-sm text-on-surface-variant">
+        No pending account creation requests right now.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Registered Users Roster -->
+  <div class="bg-surface-container-low border border-leather rounded-xl overflow-hidden shadow-xl">
+    <div class="bg-surface-container px-5 py-3.5 border-b border-leather flex items-center justify-between">
+      <h2 class="font-serif-title text-lg font-semibold text-parchment">Registered Planeswalkers ({{ all_users|length }})</h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-surface-dim text-gold uppercase tracking-wider border-b border-leather">
+          <tr>
+            <th class="py-3 px-4">User</th>
+            <th class="py-3 px-4">Email</th>
+            <th class="py-3 px-4">Status</th>
+            <th class="py-3 px-4">Role</th>
+            <th class="py-3 px-4">Public Profile</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-leather/40">
+          {% for u in all_users %}
+            <tr class="hover:bg-surface-container/60">
+              <td class="py-3 px-4 font-semibold text-parchment">{{ u.get_display_name }} (@{{ u.username }})</td>
+              <td class="py-3 px-4 text-on-surface-variant">{{ u.email }}</td>
+              <td class="py-3 px-4">
+                {% if u.is_approved %}
+                  <span class="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-600 text-emerald-300 font-bold">APPROVED</span>
+                {% else %}
+                  <span class="px-2 py-0.5 rounded bg-amber-950 border border-gold text-gold font-bold">{{ u.approval_status }}</span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4">{% if u.is_superuser %}Admin{% else %}Member{% endif %}</td>
+              <td class="py-3 px-4">
+                <a href="{% url 'public_profile' username=u.username %}" class="text-gold hover:underline">/u/{{ u.username }}/</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

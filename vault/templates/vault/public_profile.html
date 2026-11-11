@@ -1,0 +1,89 @@
+{% extends "vault/base.html" %}
+{% block title %}{{ profile_user.get_display_name }}'s Arcane Vault Profile{% endblock %}
+{% block content %}
+<div class="max-w-[1720px] mx-auto px-4 lg:px-6 py-8 space-y-8">
+
+  <div class="bg-surface-container-low border border-leather rounded-2xl p-6 lg:p-8 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <span class="text-xs uppercase tracking-widest text-gold font-bold">Planeswalker Public Ledger</span>
+      <h1 class="font-serif-title text-3xl font-bold text-parchment mt-1">{{ profile_user.get_display_name }} (@{{ profile_user.username }})</h1>
+      {% if profile_user.bio %}
+        <p class="text-xs text-on-surface-variant mt-1">{{ profile_user.bio }}</p>
+      {% endif %}
+    </div>
+    <div class="flex items-center gap-3 text-xs">
+      <span class="px-3 py-1.5 rounded-lg bg-surface-dim border border-leather text-gold font-bold">{{ public_decks|length }} Public Decks</span>
+    </div>
+  </div>
+
+  <!-- Public Commander Decks -->
+  <div class="space-y-4">
+    <h2 class="font-serif-title text-2xl font-bold text-parchment">Public Commander Decks</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {% for d in public_decks %}
+        <a href="{% url 'public_deck' username=profile_user.username slug=d.slug %}" class="bg-surface-container-low border border-leather hover:border-gold/60 rounded-xl p-5 shadow-lg transition block">
+          <span class="text-[10px] uppercase tracking-widest text-gold font-bold">{{ d.tier_badge }}</span>
+          <h3 class="font-serif-title text-xl font-bold text-parchment mt-1">{{ d.name }}</h3>
+          <p class="text-xs text-on-surface-variant mt-1">Updated {{ d.updated_at|date:"M d, Y" }}</p>
+        </a>
+      {% empty %}
+        <p class="text-xs text-on-surface-variant">No public Commander decks shared.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Public Collection & Wishlist -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="bg-surface-container-low border border-leather rounded-xl overflow-hidden">
+      <div class="bg-surface-container px-5 py-3 border-b border-leather">
+        <h3 class="font-serif-title text-lg font-bold text-parchment">Public Vault Collection</h3>
+      </div>
+      {% if profile_user.collection_is_public or is_owner %}
+        <div class="divide-y divide-leather/40 max-h-96 overflow-y-auto">
+          {% for item in collection_items %}
+            <div class="px-4 py-2.5 flex items-center justify-between text-xs">
+              <div>
+                <span class="font-mono font-bold text-gold">{{ item.quantity }}x</span>
+                <span class="font-semibold text-parchment ml-1">{{ item.card.name }}</span>
+                <span class="text-on-surface-variant ml-1">({{ item.card.set_code|upper }})</span>
+              </div>
+              <span class="font-mono text-parchment">${{ item.total_price|floatformat:2 }}</span>
+            </div>
+          {% empty %}
+            <div class="p-6 text-xs text-on-surface-variant text-center">No public collection cards.</div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="p-6 text-xs text-on-surface-variant text-center">This user's Vault collection is private.</div>
+      {% endif %}
+    </div>
+
+    <div class="bg-surface-container-low border border-leather rounded-xl overflow-hidden">
+      <div class="bg-surface-container px-5 py-3 border-b border-leather">
+        <h3 class="font-serif-title text-lg font-bold text-parchment">Public Wishlist</h3>
+      </div>
+      {% if profile_user.wishlist_is_public or is_owner %}
+        <div class="divide-y divide-leather/40 max-h-96 overflow-y-auto">
+          {% for wl in wishlist_items %}
+            <div class="px-4 py-2.5 flex items-center justify-between text-xs">
+              <div>
+                <span class="font-mono font-bold text-primary">{{ wl.quantity_needed }}x</span>
+                <span class="font-semibold text-parchment ml-1">{{ wl.card.name }}</span>
+                {% if wl.source_deck %}
+                  <span class="text-[10px] text-gold ml-1">(For {{ wl.source_deck.name }})</span>
+                {% endif %}
+              </div>
+              <span class="font-mono text-primary">${{ wl.estimated_cost|floatformat:2 }}</span>
+            </div>
+          {% empty %}
+            <div class="p-6 text-xs text-on-surface-variant text-center">Wishlist is empty.</div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="p-6 text-xs text-on-surface-variant text-center">This user's Wishlist is private.</div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

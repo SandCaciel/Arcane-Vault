@@ -1,0 +1,20 @@
+name: arcane-vault
+
+services:
+  arcane-vault:
+    build: .
+    container_name: arcane-vault
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - SQLITE_DB_PATH=/app/data/db.sqlite3
+      - ENABLE_GIT_POLLER=true
+    volumes:
+      - arcane-vault-data:/app/data
+    ports:
+      - "8000:8000"
+
+volumes:
+  arcane-vault-data:
+    name: arcane-vault-data

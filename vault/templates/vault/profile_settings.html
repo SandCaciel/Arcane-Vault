@@ -1,0 +1,124 @@
+{% extends "vault/base.html" %}
+{% block title %}Profile &amp; AI API Keys — Arcane Vault{% endblock %}
+{% block content %}
+<div class="max-w-[1200px] mx-auto px-4 lg:px-6 py-8 space-y-8">
+
+  <div class="flex flex-wrap items-center justify-between gap-4 border-b border-leather pb-5">
+    <div>
+      <span class="text-xs uppercase tracking-widest text-gold font-bold">Planeswalker Sanctum</span>
+      <h1 class="font-serif-title text-3xl font-bold text-parchment mt-1">Profile Visibility &amp; AI API Keys</h1>
+    </div>
+    <a href="{% url 'public_profile' username=user.username %}" class="px-4 py-2 rounded-xl bg-surface-container hover:bg-leather border border-gold/40 text-gold text-xs font-bold uppercase flex items-center gap-1.5 transition">
+      <span class="material-symbols-outlined text-sm">public</span> View My Public Profile (/u/{{ user.username }}/)
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+    <!-- Profile & Public/Private Toggles (5 Cols) -->
+    <div class="lg:col-span-5 bg-surface-container-low border border-leather rounded-2xl p-6 shadow-xl space-y-5">
+      <h2 class="font-serif-title text-xl font-bold text-parchment border-b border-leather pb-3">Public &amp; Private Visibility</h2>
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_profile"/>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-gold mb-1">Display Name</label>
+          <input type="text" name="display_name" value="{{ user.display_name }}" class="w-full bg-surface-dim border border-leather rounded-lg px-3 py-2 text-sm text-parchment"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-gold mb-1">Bio / Commander Playstyle</label>
+          <textarea name="bio" rows="3" class="w-full bg-surface-dim border border-leather rounded-lg px-3 py-2 text-xs text-parchment">{{ user.bio }}</textarea>
+        </div>
+        <div class="space-y-3 pt-2">
+          <label class="flex items-center gap-3 p-3 rounded-xl bg-surface-dim border border-leather cursor-pointer">
+            <input type="checkbox" name="collection_is_public" {% if user.collection_is_public %}checked{% endif %} class="accent-crimson w-4 h-4"/>
+            <div class="text-xs">
+              <strong class="text-parchment block">Public Physical Vault Collection</strong>
+              <span class="text-on-surface-variant">Allow visitors at <code>/u/{{ user.username }}/</code> to browse your owned cards.</span>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl bg-surface-dim border border-leather cursor-pointer">
+            <input type="checkbox" name="wishlist_is_public" {% if user.wishlist_is_public %}checked{% endif %} class="accent-crimson w-4 h-4"/>
+            <div class="text-xs">
+              <strong class="text-parchment block">Public Wishlist</strong>
+              <span class="text-on-surface-variant">Allow friends &amp; trading partners to view your needed Wishlist cards.</span>
+            </div>
+          </label>
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase tracking-wider transition">
+          Save Profile Settings
+        </button>
+      </form>
+    </div>
+
+    <!-- AI Agent API Keys Manager (7 Cols) -->
+    <div class="lg:col-span-7 bg-surface-container-low border border-leather rounded-2xl p-6 shadow-xl space-y-5">
+      <div class="flex items-center justify-between border-b border-leather pb-3">
+        <div>
+          <h2 class="font-serif-title text-xl font-bold text-parchment">Personal AI &amp; Automation API Keys</h2>
+          <p class="text-xs text-on-surface-variant mt-0.5">
+            Generate API keys so AI assistants (like Antigravity or Roko) can bulk-add cards from binder photos, inspect your collection, and build Commander decks for you.
+          </p>
+        </div>
+        <a href="/api/v1/docs" class="px-3 py-1.5 rounded-lg bg-surface-dim border border-leather text-gold text-xs font-mono hover:underline shrink-0">
+          /api/v1/docs
+        </a>
+      </div>
+
+      {% if newly_created_key %}
+        <div class="bg-crimson/30 border-2 border-gold rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-gold">New API Key Generated — Copy Now!</span>
+            <button onclick="navigator.clipboard.writeText('{{ newly_created_key }}'); this.innerText='Copied!';" class="px-3 py-1 rounded bg-gold text-surface-dim text-xs font-bold uppercase">Copy Key</button>
+          </div>
+          <code class="block bg-surface-dim p-3 rounded-lg font-mono text-xs text-parchment break-all">{{ newly_created_key }}</code>
+        </div>
+      {% endif %}
+
+      <form method="post" class="flex items-center gap-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_api_key"/>
+        <input type="text" name="key_name" required placeholder="Key label (e.g. Antigravity Bulk Scanner, Roko Deckbuilder)..." class="flex-1 bg-surface-dim border border-leather rounded-xl px-3.5 py-2.5 text-xs text-parchment focus:outline-none focus:border-gold"/>
+        <button type="submit" class="px-4 py-2.5 rounded-xl bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase tracking-wider shrink-0 transition">
+          + Generate API Key
+        </button>
+      </form>
+
+      <div class="divide-y divide-leather/50 border border-leather rounded-xl overflow-hidden bg-surface-dim">
+        {% for k in api_keys %}
+          <div class="p-3.5 flex items-center justify-between gap-3 text-xs">
+            <div>
+              <div class="font-bold text-parchment">{{ k.name }}</div>
+              <div class="font-mono text-gold text-[11px]">{{ k.key_prefix }}•••••••••••••••• • Created {{ k.created_at|date:"M d, Y" }}</div>
+            </div>
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="revoke_api_key"/>
+              <input type="hidden" name="key_id" value="{{ k.id }}"/>
+              <button type="submit" class="px-3 py-1 rounded bg-red-950 hover:bg-red-800 border border-red-700 text-red-200 text-[11px] font-bold uppercase">Revoke</button>
+            </form>
+          </div>
+        {% empty %}
+          <div class="p-6 text-center text-xs text-on-surface-variant">No API keys created yet.</div>
+        {% endfor %}
+      </div>
+
+      <!-- Example AI Usage Snippet -->
+      <div class="bg-surface-dim border border-leather rounded-xl p-4 space-y-2">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-gold">AI Bulk Card Import Endpoint Example</span>
+        <pre class="text-[11px] font-mono text-on-surface-variant overflow-x-auto">POST {{ base_url }}/api/v1/collection/bulk-add
+X-API-Key: arcv_your_api_key_here
+Content-Type: application/json
+
+{
+  "cards": [
+    {"name": "Sol Ring", "set_code": "PIP", "collector_number": "239", "quantity": 1},
+    {"name": "Dogmeat, Ever Loyal", "set_code": "PIP", "quantity": 1, "finish": "foil"}
+  ]
+}</pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

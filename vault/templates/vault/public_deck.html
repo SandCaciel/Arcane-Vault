@@ -1,0 +1,51 @@
+{% extends "vault/base.html" %}
+{% block title %}{{ deck.name }} — Shared Commander Deck{% endblock %}
+{% block content %}
+<div class="max-w-[1400px] mx-auto px-4 lg:px-6 py-8 space-y-6">
+
+  <div class="bg-surface-container-low border border-leather rounded-2xl p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      {% if commander %}
+        <img src="{{ commander.image_normal }}" alt="{{ commander.name }}" class="w-16 h-24 rounded-lg object-cover border border-gold/40"/>
+      {% endif %}
+      <div>
+        <span class="text-xs uppercase tracking-widest text-gold font-bold">Commander Deck by @{{ profile_user.username }}</span>
+        <h1 class="font-serif-title text-3xl font-bold text-parchment">{{ deck.name }}</h1>
+        <p class="text-xs text-on-surface-variant">{{ total_cards }} Cards • Commander Format</p>
+      </div>
+    </div>
+    <a href="{% url 'public_profile' username=profile_user.username %}" class="px-4 py-2 rounded-lg bg-surface-container border border-leather text-xs font-bold text-gold uppercase">
+      View @{{ profile_user.username }}'s Profile
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div class="lg:col-span-8 bg-surface-container-low border border-leather rounded-xl overflow-hidden">
+      <div class="bg-surface-container px-5 py-3 border-b border-leather">
+        <h2 class="font-serif-title text-lg font-bold text-parchment">Decklist ({{ total_cards }} Cards)</h2>
+      </div>
+      <div class="divide-y divide-leather/40">
+        {% for dc in deck_cards %}
+          <div class="px-4 py-2.5 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-3">
+              <span class="font-mono font-bold text-gold">{{ dc.quantity }}x</span>
+              <span class="font-semibold text-parchment">{{ dc.card.name }}</span>
+              {% if dc.is_commander %}
+                <span class="px-2 py-0.5 rounded bg-crimson text-parchment text-[10px] font-bold uppercase">Commander</span>
+              {% endif %}
+              <span class="text-on-surface-variant">{{ dc.role_group }}</span>
+            </div>
+            <span class="font-mono text-gold">{{ dc.card.set_code|upper }} #{{ dc.card.collector_number }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="lg:col-span-4 bg-surface-container-low border border-leather rounded-xl p-5 space-y-3">
+      <h3 class="font-serif-title text-base font-bold text-gold">Moxfield Export</h3>
+      <textarea rows="14" readonly class="w-full bg-surface-dim border border-leather rounded-lg p-3 font-mono text-xs text-parchment">{{ moxfield_text }}</textarea>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

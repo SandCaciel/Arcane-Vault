@@ -1,0 +1,389 @@
+{% extends "vault/base.html" %}
+{% block title %}{{ deck.name }} — Commander Deck Workshop{% endblock %}
+{% block content %}
+<div class="max-w-[1720px] mx-auto px-4 lg:px-6 pt-6 pb-16 space-y-6">
+
+  <!-- Top Breadcrumb, Deck Switcher & Mode Badges -->
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="{% url 'decks_index' %}?list=1" class="flex items-center gap-1.5 text-on-surface-variant hover:text-gold transition text-xs font-bold uppercase tracking-wider">
+        <span class="material-symbols-outlined text-sm">arrow_back</span>
+        <span>All Decks ({{ user_decks|length }})</span>
+      </a>
+      <span class="text-outline-variant">/</span>
+      <span class="px-2.5 py-0.5 rounded bg-surface-container-high border border-leather text-gold text-[11px] font-bold uppercase tracking-wider">
+        {{ deck.tier_badge }}
+      </span>
+      <span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-parchment font-mono text-[11px]">
+        <span class="w-2 h-2 rounded-full bg-gold animate-pulse"></span>
+        Cross-Deck Vault Allocation Active
+      </span>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="flex items-center bg-surface-container-low border border-leather p-1 rounded-lg">
+        <a href="?view=groups&q={{ q }}" class="px-3 py-1 rounded text-[11px] font-bold uppercase {% if view_mode == 'groups' %}bg-crimson text-parchment{% else %}text-on-surface-variant hover:text-parchment{% endif %}">Role Groups</a>
+        <a href="?view=types&q={{ q }}" class="px-3 py-1 rounded text-[11px] font-bold uppercase {% if view_mode == 'types' %}bg-crimson text-parchment{% else %}text-on-surface-variant hover:text-parchment{% endif %}">Card Types</a>
+        <a href="?view=visual&q={{ q }}" class="px-3 py-1 rounded text-[11px] font-bold uppercase flex items-center gap-1 {% if view_mode == 'visual' %}bg-crimson text-parchment{% else %}text-on-surface-variant hover:text-parchment{% endif %}">
+          <span class="material-symbols-outlined text-xs">grid_view</span> Visual
+        </a>
+      </div>
+      <button onclick="document.getElementById('createDeckModal').classList.remove('hidden')" class="px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-leather border border-leather text-gold text-xs font-bold uppercase flex items-center gap-1 transition">
+        <span class="material-symbols-outlined text-sm">add</span> New / Import Deck
+      </button>
+    </div>
+  </div>
+
+  <!-- Hero Commander Showcase & Master Deck Ledger (Matches Stitch Commander Deck Workshop) -->
+  <div class="bg-surface-container-low border border-leather rounded-2xl p-5 lg:p-7 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.85)] relative overflow-hidden">
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center relative z-10">
+
+      <!-- Commander Portrait Preview & Title (4 Cols) -->
+      <div class="xl:col-span-4 flex items-center gap-5">
+        <div class="relative shrink-0">
+          <div class="absolute -inset-1 rounded-xl bg-gradient-to-br from-gold via-crimson to-leather opacity-75 blur-sm"></div>
+          <div class="relative w-28 h-40 rounded-lg overflow-hidden bg-surface-container-lowest border border-gold/40 shadow-2xl">
+            {% if commander %}
+              <img src="{{ commander.image_normal }}" alt="{{ commander.name }}" class="w-full h-full object-cover"/>
+            {% else %}
+              <div class="w-full h-full flex items-center justify-center text-gold">
+                <span class="material-symbols-outlined text-4xl">military_tech</span>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="text-[11px] text-gold tracking-widest uppercase font-bold">
+            Commander • {% if commander %}{{ commander.color_identity|join:""|default:"Colorless" }}{% else %}EDH{% endif %}
+          </span>
+          <h1 class="font-serif-title text-2xl lg:text-3xl text-parchment font-bold tracking-tight truncate mt-0.5">
+            {{ deck.name }}
+          </h1>
+          {% if commander %}
+            <p class="font-serif-title text-sm text-gold italic truncate mt-0.5">{{ commander.name }}</p>
+          {% endif %}
+          <div class="flex flex-wrap items-center gap-2 mt-3 text-xs">
+            <a href="{% url 'public_deck' username=user.username slug=deck.slug %}" class="inline-flex items-center gap-1 text-gold hover:underline font-semibold">
+              <span class="material-symbols-outlined text-sm">share</span> Share Link
+            </a>
+            <span class="text-outline-variant">•</span>
+            <a href="{% url 'deck_analysis' slug=deck.slug %}" class="inline-flex items-center gap-1 text-parchment hover:text-gold">
+              <span class="material-symbols-outlined text-sm">bar_chart</span> Goldfish &amp; Curve
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mid Deck Stats Ledger Grid (5 Cols) -->
+      <div class="xl:col-span-5 grid grid-cols-2 sm:grid-cols-4 gap-3 bg-surface-container-lowest/90 border border-leather p-3.5 rounded-xl shadow-inner">
+        <div class="flex flex-col p-2">
+          <span class="text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">Format Count</span>
+          <span class="font-serif-title text-xl text-parchment font-bold mt-1">{{ total_count }}<span class="text-on-surface-variant text-xs">/100</span></span>
+          <span class="font-mono text-[11px] text-gold mt-0.5 flex items-center gap-1">
+            <span class="material-symbols-outlined text-xs">check_circle</span> Commander
+          </span>
+        </div>
+        <div class="flex flex-col p-2 border-l border-leather/50">
+          <span class="text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">Ownership</span>
+          <span class="font-serif-title text-xl text-gold font-bold mt-1">{{ allocated_count }}<span class="text-on-surface-variant text-xs">/{{ total_count }}</span></span>
+          <span class="font-mono text-[11px] text-primary mt-0.5">{{ wishlist_left }} Wishlist Left</span>
+        </div>
+        <div class="flex flex-col p-2 border-l border-leather/50">
+          <span class="text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">Total Deck Value</span>
+          <span class="font-serif-title text-xl text-parchment font-bold mt-1">${{ total_value|floatformat:0 }}</span>
+          <span class="font-mono text-[11px] text-gold mt-0.5">${{ vault_owned_value|floatformat:0 }} In Vault</span>
+        </div>
+        <div class="flex flex-col p-2 border-l border-leather/50">
+          <span class="text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">Avg Mana Value</span>
+          <span class="font-serif-title text-xl text-parchment font-bold mt-1">{{ avg_cmc_all|floatformat:2 }}</span>
+          <span class="font-mono text-[11px] text-on-surface-variant mt-0.5">w/o Lands: {{ avg_cmc_nonland|floatformat:2 }}</span>
+        </div>
+      </div>
+
+      <!-- Primary Workbench Action Buttons (3 Cols) -->
+      <div class="xl:col-span-3 flex flex-col gap-2.5 justify-center">
+        <button onclick="document.getElementById('addDeckToCollectionModal').classList.remove('hidden')" class="w-full bg-crimson hover:bg-copper text-parchment border border-gold/40 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider shadow-[0_0_16px_rgba(111,29,27,0.5)] transition">
+          <span class="material-symbols-outlined text-base">inventory</span>
+          <span>Add Deck to Physical Vault</span>
+          {% if wishlist_left > 0 %}
+            <span class="font-mono text-gold">({{ wishlist_left }} Missing)</span>
+          {% endif %}
+        </button>
+        <div class="grid grid-cols-3 gap-2 w-full">
+          <a href="#quickAddBar" class="bg-surface-container hover:bg-leather border border-leather text-parchment px-2.5 py-2 rounded-lg flex items-center justify-center gap-1 text-[11px] font-bold uppercase transition">
+            <span class="material-symbols-outlined text-xs text-gold">add_circle</span> Add Card
+          </a>
+          <a href="{% url 'deck_analysis' slug=deck.slug %}" class="bg-surface-container hover:bg-leather border border-leather text-parchment px-2.5 py-2 rounded-lg flex items-center justify-center gap-1 text-[11px] font-bold uppercase transition">
+            <span class="material-symbols-outlined text-xs text-gold">swords</span> Goldfish
+          </a>
+          <button onclick="document.getElementById('exportMoxfieldModal').classList.remove('hidden')" class="bg-surface-container hover:bg-leather border border-leather text-parchment px-2.5 py-2 rounded-lg flex items-center justify-center gap-1 text-[11px] font-bold uppercase transition">
+            <span class="material-symbols-outlined text-xs text-gold">ios_share</span> Export
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Main 12-Col Deck Ledger & Sidebar -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+    <!-- LEFT 8 COLS: Categorized Deck Inventory -->
+    <div class="lg:col-span-8 flex flex-col gap-6">
+
+      <!-- Filter & Quick-Add Bar -->
+      <div id="quickAddBar" class="bg-surface-container-lowest border border-leather p-4 rounded-xl space-y-3 shadow-md">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <form method="get" class="flex-1 flex items-center gap-2">
+            <input type="hidden" name="view" value="{{ view_mode }}"/>
+            <span class="material-symbols-outlined text-gold pl-2">search</span>
+            <input type="text" name="q" value="{{ q }}" placeholder="Filter this deck by Scryfall syntax (e.g. o:draw, t:artifact, cmc<=2)..." class="w-full bg-surface-dim border border-leather rounded-lg px-3 py-2 text-xs text-parchment focus:outline-none focus:border-gold"/>
+            <button type="submit" class="px-3 py-2 rounded-lg bg-leather text-gold text-xs font-bold uppercase">Filter</button>
+          </form>
+        </div>
+
+        <!-- Quick Add Card to This Deck Form -->
+        <form method="post" class="flex flex-wrap items-center gap-2 pt-2 border-t border-leather/60">
+          {% csrf_token %}
+          <input type="hidden" name="form_action" value="add_card_to_deck"/>
+          <input type="number" name="quantity" value="1" min="1" max="99" class="w-14 bg-surface-dim border border-leather rounded-lg px-2 py-2 text-xs font-mono text-gold text-center"/>
+          <input type="text" name="card_name" required placeholder="Quick-add card by name (e.g. Sol Ring, Rhystic Study, Command Tower)..." class="flex-1 min-w-[220px] bg-surface-dim border border-leather rounded-lg px-3 py-2 text-xs text-parchment focus:outline-none focus:border-gold"/>
+          <select name="role_group" class="bg-surface-dim border border-leather rounded-lg px-2.5 py-2 text-xs text-gold">
+            <option value="">Auto Role Group</option>
+            {% for rg in role_group_choices %}
+              <option value="{{ rg }}">{{ rg }}</option>
+            {% endfor %}
+          </select>
+          <label class="flex items-center gap-1 text-xs text-on-surface-variant px-2 cursor-pointer">
+            <input type="checkbox" name="is_commander" class="accent-crimson"/> Commander
+          </label>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase tracking-wider transition">
+            + Add to Deck
+          </button>
+        </form>
+      </div>
+
+      {% if view_mode == 'visual' %}
+        <!-- VISUAL CARD GRID MODE -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {% for group in ordered_groups %}
+            {% for row in group.cards %}
+              <div class="bg-surface-container-low border {% if row.dc.is_fully_allocated %}border-leather{% else %}border-crimson{% endif %} rounded-xl overflow-hidden shadow-lg">
+                <div class="relative aspect-[5/7]">
+                  <img src="{{ row.card.image_normal }}" alt="{{ row.card.name }}" class="w-full h-full object-cover"/>
+                  <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                    <span class="px-2 py-0.5 rounded bg-surface-container-lowest/90 text-gold font-mono text-xs font-bold">{{ row.dc.quantity }}x</span>
+                    {% if row.dc.is_fully_allocated %}
+                      <span class="px-2 py-0.5 rounded bg-surface-container-lowest/90 border border-gold text-gold text-[10px] font-bold uppercase">Owned</span>
+                    {% else %}
+                      <span class="px-2 py-0.5 rounded bg-crimson text-parchment text-[10px] font-bold uppercase">★ Wishlist</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <!-- CATEGORIZED ROLE GROUPS LEDGER -->
+        {% for group in ordered_groups %}
+          <div class="flex flex-col bg-surface-container-low border border-leather rounded-xl overflow-hidden shadow-lg">
+            <div class="bg-surface-container px-4 py-3 border-b border-leather flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-gold text-lg">
+                  {% if group.name == 'Commander' %}military_tech{% elif 'Ramp' in group.name %}bolt{% elif 'Draw' in group.name %}auto_stories{% elif 'Land' in group.name %}landscape{% else %}style{% endif %}
+                </span>
+                <h2 class="font-serif-title text-lg text-parchment font-semibold tracking-wide">{{ group.name }}</h2>
+                <span class="font-mono text-xs bg-surface-container-lowest border border-leather text-gold px-2 py-0.5 rounded">{{ group.total_qty }} Cards</span>
+                <span class="text-xs text-primary font-semibold ml-1">
+                  {{ group.owned_qty }} Allocated • {{ group.wishlist_qty }} Wishlist
+                </span>
+              </div>
+              <span class="font-mono text-xs text-on-surface-variant">${{ group.est_value|floatformat:2 }} Est.</span>
+            </div>
+
+            <div class="divide-y divide-leather/40 bg-surface-container-lowest/50">
+              {% for row in group.cards %}
+                <div class="group flex flex-col sm:flex-row sm:items-center justify-between px-4 py-2.5 gap-2 {% if not row.dc.is_fully_allocated %}bg-crimson/15 hover:bg-crimson/25{% else %}hover:bg-surface-container{% endif %} transition">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <span class="font-mono text-xs font-bold {% if row.dc.is_fully_allocated %}text-gold{% else %}text-primary{% endif %} w-6 text-center">{{ row.dc.quantity }}x</span>
+                    <span class="px-1.5 py-0.5 rounded bg-surface-dim border border-leather font-mono text-[11px] text-gold font-semibold shrink-0">{{ row.card.cmc|floatformat:0 }} CMC</span>
+                    <div class="flex flex-col min-w-0">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="font-serif-title text-sm font-semibold {% if row.dc.is_fully_allocated %}text-parchment{% else %}text-primary{% endif %} truncate">
+                          {{ row.card.name }}
+                        </span>
+                        {% if row.dc.is_commander %}
+                          <span class="px-2 py-0.5 rounded text-[10px] uppercase bg-crimson text-parchment border border-gold/40 font-bold">Commander</span>
+                        {% endif %}
+                      </div>
+                      <span class="text-[11px] text-on-surface-variant truncate">
+                        {{ row.card.type_line }} • {{ row.card.set_code|upper }} #{{ row.card.collector_number }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Right Ownership / Cross-Deck Allocation / Wishlist Badge -->
+                  <div class="flex items-center gap-3 shrink-0">
+                    {% if row.dc.is_fully_allocated %}
+                      <span class="inline-flex items-center gap-1 text-[11px] text-gold bg-surface-container border border-gold/30 px-2.5 py-0.5 rounded font-bold">
+                        <span class="material-symbols-outlined text-xs">check_circle</span>
+                        Owned • Allocated ({{ row.dc.allocated_quantity }}/{{ row.dc.quantity }})
+                      </span>
+                    {% else %}
+                      <div class="flex flex-col items-end">
+                        <span class="bg-crimson text-parchment border border-gold/40 px-2.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider flex items-center gap-1">
+                          <span class="material-symbols-outlined text-xs">star</span>
+                          Wishlist ({{ row.dc.missing_quantity }} Needed)
+                        </span>
+                        {% if row.other_decks_using %}
+                          <span class="text-[10px] text-gold mt-0.5">
+                            Owned copy in use in: {{ row.other_decks_using|join:", " }}
+                          </span>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+
+                    <span class="font-mono text-xs text-parchment font-semibold w-16 text-right">${{ row.line_price|floatformat:2 }}</span>
+
+                    <form method="post" class="inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="form_action" value="set_commander"/>
+                      <input type="hidden" name="deck_card_id" value="{{ row.dc.id }}"/>
+                      <button type="submit" class="p-1 text-on-surface-variant hover:text-gold transition" title="Toggle Commander Status">
+                        <span class="material-symbols-outlined text-sm">military_tech</span>
+                      </button>
+                    </form>
+                    <form method="post" class="inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="form_action" value="remove_deck_card"/>
+                      <input type="hidden" name="deck_card_id" value="{{ row.dc.id }}"/>
+                      <button type="submit" class="p-1 text-on-surface-variant hover:text-red-400 transition" title="Remove Card from Deck">
+                        <span class="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% empty %}
+          <div class="bg-surface-container-low border border-leather rounded-xl p-10 text-center text-sm text-on-surface-variant">
+            This Commander deck has no cards yet. Use the quick-add bar above or import from Moxfield!
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- RIGHT 4 COLS: Deck Switcher, Wishlist Summary & Management -->
+    <div class="lg:col-span-4 space-y-6">
+      <!-- Switch Active Deck -->
+      <div class="bg-surface-container-low border border-leather rounded-xl p-5 space-y-3 shadow-lg">
+        <div class="flex items-center justify-between">
+          <h3 class="font-serif-title text-base font-bold text-gold uppercase tracking-wider">Your Commander Decks</h3>
+          <a href="{% url 'decks_index' %}?list=1" class="text-xs text-on-surface-variant hover:text-parchment">View All</a>
+        </div>
+        <div class="space-y-1.5">
+          {% for d in user_decks %}
+            <a href="{% url 'deck_workshop' slug=d.slug %}" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition {% if d.id == deck.id %}bg-crimson text-parchment border border-gold/40{% else %}bg-surface-container hover:bg-leather text-on-surface-variant hover:text-parchment{% endif %}">
+              <span class="truncate">{{ d.name }}</span>
+              <span class="font-mono text-[10px] opacity-80">{{ d.format|upper }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Cross-Deck Allocation Rules Card -->
+      <div class="bg-surface-container-low border border-leather rounded-xl p-5 space-y-3 shadow-lg">
+        <div class="flex items-center gap-2 text-gold">
+          <span class="material-symbols-outlined">sync_lock</span>
+          <h3 class="font-serif-title text-base font-bold">Vault Allocation &amp; Wishlist Sync</h3>
+        </div>
+        <p class="text-xs text-on-surface-variant leading-relaxed">
+          Each physical copy in your Vault can only be allocated to <strong class="text-parchment">one Commander deck at a time</strong>. If a card is already in use in another deck (like <em>Sol Ring</em> in <em>Dogmeat, Ever Loyal</em>), adding it here automatically places another copy onto your <a href="{% url 'my_vault' %}?tab=wishlist" class="text-gold underline">Wishlist</a> until you add another physical copy to your Vault.
+        </p>
+        <div class="pt-2 border-t border-leather flex justify-between items-center text-xs">
+          <span class="text-on-surface-variant">Missing / Unallocated Value:</span>
+          <span class="font-mono font-bold text-primary">${{ missing_wishlist_value|floatformat:2 }}</span>
+        </div>
+      </div>
+
+      <!-- Danger Zone: Delete Deck -->
+      <div class="bg-surface-container-low border border-leather rounded-xl p-4 flex items-center justify-between">
+        <span class="text-xs text-on-surface-variant">Release allocated cards &amp; delete deck</span>
+        <form method="post" onsubmit="return confirm('Delete this Commander deck? Owned cards in your Vault will be preserved and freed for other decks.');">
+          {% csrf_token %}
+          <input type="hidden" name="form_action" value="delete_deck"/>
+          <button type="submit" class="px-3 py-1.5 rounded bg-red-950 hover:bg-red-800 border border-red-700 text-red-200 text-xs font-bold uppercase">
+            Delete Deck
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: Add Deck Cards to Physical Vault Collection -->
+<div id="addDeckToCollectionModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-surface-container-low border border-gold/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+    <div class="flex items-center justify-between border-b border-leather pb-3">
+      <h3 class="font-serif-title text-xl font-bold text-parchment">Add Deck Cards to Physical Vault</h3>
+      <button onclick="document.getElementById('addDeckToCollectionModal').classList.add('hidden')" class="text-on-surface-variant hover:text-parchment">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <p class="text-xs text-on-surface-variant leading-relaxed">
+      Choose how you want to add cards from <strong class="text-gold">{{ deck.name }}</strong> into your physical Vault collection:
+    </p>
+
+    <form method="post" class="space-y-3">
+      {% csrf_token %}
+      <input type="hidden" name="form_action" value="add_deck_to_collection"/>
+
+      <label class="flex items-start gap-3 p-3.5 rounded-xl bg-surface-dim border border-leather hover:border-gold cursor-pointer">
+        <input type="radio" name="mode" value="missing_only" checked class="mt-1 accent-crimson"/>
+        <div class="text-xs">
+          <strong class="text-parchment block">Acquire Missing / Unallocated Wishlist Cards Only ({{ wishlist_left }} Cards)</strong>
+          <span class="text-on-surface-variant">Adds only the cards in this deck that are currently unowned or used in other decks, allocating them here and clearing their Wishlist items.</span>
+        </div>
+      </label>
+
+      <label class="flex items-start gap-3 p-3.5 rounded-xl bg-surface-dim border border-leather hover:border-gold cursor-pointer">
+        <input type="radio" name="mode" value="all" class="mt-1 accent-crimson"/>
+        <div class="text-xs">
+          <strong class="text-gold block">Add Full Physical Prebuilt Deck (All {{ total_count }} Cards)</strong>
+          <span class="text-on-surface-variant">Ideal when adding a newly bought physical Commander precon! Increments your physical Vault collection by all {{ total_count }} cards in this decklist.</span>
+        </div>
+      </label>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="document.getElementById('addDeckToCollectionModal').classList.add('hidden')" class="px-4 py-2 rounded-lg bg-surface-container text-xs text-on-surface-variant">Cancel</button>
+        <button type="submit" class="px-5 py-2 rounded-lg bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase">Add to My Vault</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Export Deck to Moxfield -->
+<div id="exportMoxfieldModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-surface-container-low border border-gold/40 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+    <div class="flex items-center justify-between border-b border-leather pb-3">
+      <h3 class="font-serif-title text-xl font-bold text-parchment">Export to Moxfield Format</h3>
+      <button onclick="document.getElementById('exportMoxfieldModal').classList.add('hidden')" class="text-on-surface-variant hover:text-parchment">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <p class="text-xs text-on-surface-variant">Copy the Moxfield-compatible decklist below:</p>
+    <textarea id="moxfieldExportArea" rows="12" readonly class="w-full bg-surface-dim border border-leather rounded-xl p-3 font-mono text-xs text-parchment">{{ moxfield_export_text }}</textarea>
+    <div class="flex justify-end gap-2">
+      <button onclick="navigator.clipboard.writeText(document.getElementById('moxfieldExportArea').value); this.innerText='Copied!';" class="px-5 py-2 rounded-lg bg-crimson hover:bg-copper text-parchment border border-gold/40 text-xs font-bold uppercase">
+        Copy to Clipboard
+      </button>
+    </div>
+  </div>
+</div>
+
+{% include "vault/partials/create_deck_modal.html" %}
+{% endblock %}
